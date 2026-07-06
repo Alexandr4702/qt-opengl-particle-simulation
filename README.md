@@ -11,6 +11,14 @@ cmake -S . -B build
 cmake --build build
 ```
 
+## Camera controls
+
+- Hold the left mouse button and drag to orbit around the scene.
+- Use the mouse wheel to zoom.
+- Use `W` and `S` to move along the camera axis.
+- Use `A` and `D` to move sideways.
+- Use `Space` and `Shift` to move up and down.
+
 When Qt is not available on the default CMake search path, specify its installation prefix:
 
 ```sh

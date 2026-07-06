@@ -20,6 +20,8 @@ qt_standard_project_setup()
 qt_add_executable(Qt_grapth WIN32
     body.cpp
     body.h
+    camera.cpp
+    camera.h
     gl_game.cpp
     gl_game.h
     main.cpp

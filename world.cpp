@@ -25,7 +25,6 @@ World::~World()
 
 void World::draw()
 {
-    camera.setToIdentity();
     if (bodies.isEmpty())
         return;
 
@@ -35,6 +34,11 @@ void World::draw()
     for (int step = 0; step < substeps_per_frame; ++step)
         update_gpu();
     bodies.first()->draw_instances(bodies.size(), position_buffers[current_buffer]);
+}
+
+void World::set_camera(const QMatrix4x4& value)
+{
+    camera = value;
 }
 
 void World::init_render_shader()

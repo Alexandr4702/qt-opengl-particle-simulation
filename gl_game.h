@@ -3,6 +3,9 @@
 
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
+#include <QElapsedTimer>
+#include <QPoint>
+#include "camera.h"
 #include "world.h"
 
 class GL_GAME: public QOpenGLWidget, protected QOpenGLFunctions
@@ -15,9 +18,16 @@ protected:
     void resizeGL(int width, int height);
     void paintGL();
     void initShader();
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 private:
     Body* Cube;
     World* world = nullptr;
+    QPoint last_mouse_position;
+    Camera camera;
+    QElapsedTimer frame_timer;
 
 };
 

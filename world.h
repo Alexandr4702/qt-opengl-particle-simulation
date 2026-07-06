@@ -16,6 +16,7 @@ public:
 
     void add_body(Body* body);
     void draw();
+    void set_camera(const QMatrix4x4& value);
 
     float gravitational_constant = 1.0f;
     float softening = 0.01f;
