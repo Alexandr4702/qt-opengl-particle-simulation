@@ -38,6 +38,7 @@ private:
     QOpenGLShaderProgram* shader = nullptr;
     QMatrix4x4* projection = nullptr;
     QMatrix4x4* camera = nullptr;
+    int vertex_count = 0;
 };
 
 #endif // BODY_H
