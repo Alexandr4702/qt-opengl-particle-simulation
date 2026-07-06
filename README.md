@@ -20,7 +20,7 @@ cmake --build build
 
 ## Mathematical model
 
-Each body has a mass $m$, position $\mathbf r$, and linear velocity $\mathbf v$. Positions and velocities are stored in ping-pong shader storage buffers and updated by an OpenGL compute shader.
+Each body has a mass $m$, position $\mathbf r$, and linear velocity $\mathbf v$. Positions and velocities are stored in ping-pong shader storage buffers and updated by an OpenGL compute shader. The gravitational constant, softening term, integration step, and compute substeps per rendered frame are configured by the public `World` fields `gravitational_constant`, `softening`, `time_step`, and `substeps_per_frame`.
 
 The gravitational force exerted by body $j$ on body $i$ is calculated with gravitational constant $G=1$:
 
@@ -28,7 +28,7 @@ $$
 \mathbf a_i = \sum_{j\ne i}
 \frac{m_j(\mathbf r_j-\mathbf r_i)}
 {(\lVert \mathbf r_j-\mathbf r_i\rVert^2+\varepsilon)^{3/2}},
-\qquad \varepsilon=0.01.
+\qquad \varepsilon=\texttt{World::softening}.
 $$
 
 The softening term $\varepsilon$ prevents singular acceleration at very small distances. Velocity and position use semi-implicit Euler integration:
