@@ -1,5 +1,12 @@
 *.o
+/.cache/
+/build*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
 Makefile
 Qt_grapth
 Qt_grapth.pro.*
 .qmake.stash
+qrc_*.cpp

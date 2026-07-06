@@ -1,8 +1,5 @@
 
-QT+=widgets
-QT+=opengl
-QT += gui
-QT+=core
+QT += core gui widgets opengl openglwidgets
 
 
 SOURCES += \
@@ -22,5 +19,3 @@ RESOURCES += \
     Shaders.qrc \
 
 DISTFILES +=
-
-LIBS += lassimp

@@ -1,4 +1,5 @@
 #include "qmainwindows_.h"
+#include <QResizeEvent>
 
 Qmainwindows_::Qmainwindows_()
 {
