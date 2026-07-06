@@ -25,10 +25,16 @@ void GL_GAME::initializeGL()
     initializeOpenGLFunctions();
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    world = new World(context());
     frame_timer.start();
+    rebuild_scene();
+}
 
-    constexpr int body_count = 512;
+void GL_GAME::rebuild_scene()
+{
+    delete world;
+    world = new World(context());
+    world->time_scale = simulation_time_scale;
+
     constexpr float central_mass = 100.0f;
 
     Body* center = new Body(context());
@@ -37,9 +43,9 @@ void GL_GAME::initializeGL()
     center->setMass(central_mass);
     world->add_body(center);
 
-    for (int index = 1; index < body_count; ++index) {
+    for (int index = 1; index < particle_count; ++index) {
         const float angle = float(index) * 0.37f;
-        const float radius = 1.0f + 6.0f * float(index) / float(body_count);
+        const float radius = 1.0f + 6.0f * float(index) / float(particle_count);
         const float orbital_speed =
             qSqrt(world->gravitational_constant * central_mass / radius);
         Body* body = new Body(context());
@@ -51,14 +57,46 @@ void GL_GAME::initializeGL()
         body->setMass(0.02);
         world->add_body(body);
     }
+    rebuild_requested = false;
 }
 
 void GL_GAME::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (rebuild_requested)
+        rebuild_scene();
+
     camera.update(frame_timer.restart() / 1000.0f);
     world->set_camera(camera.view_matrix());
-    world->draw();
+    world->draw(simulation_running);
+    update();
+}
+
+bool GL_GAME::toggle_simulation()
+{
+    simulation_running = !simulation_running;
+    return simulation_running;
+}
+
+void GL_GAME::reset_simulation()
+{
+    simulation_running = false;
+    rebuild_requested = true;
+    update();
+}
+
+void GL_GAME::set_time_scale(double scale)
+{
+    simulation_time_scale = float(qBound(0.1, scale, 10.0));
+    if (world)
+        world->time_scale = simulation_time_scale;
+}
+
+void GL_GAME::spawn_particles(int count)
+{
+    particle_count = qBound(2, count, 4096);
+    simulation_running = false;
+    rebuild_requested = true;
     update();
 }
 

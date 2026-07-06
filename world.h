@@ -15,12 +15,13 @@ public:
     ~World();
 
     void add_body(Body* body);
-    void draw();
+    void draw(bool advance_simulation);
     void set_camera(const QMatrix4x4& value);
 
     float gravitational_constant = 1.0f;
     float softening = 0.01f;
     float time_step = 0.001f;
+    float time_scale = 1.0f;
     int substeps_per_frame = 8;
     QMatrix4x4 Projection;
 
@@ -39,6 +40,7 @@ private:
     unsigned int velocity_buffers[2] = {0, 0};
     int current_buffer = 0;
     bool gpu_initialized = false;
+    float substep_accumulator = 0.0f;
 };
 
 #endif // WORLD_H

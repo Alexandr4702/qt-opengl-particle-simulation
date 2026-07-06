@@ -9,10 +9,8 @@ class Qmainwindows_ :public QWidget
 //    Q_OBJECT
 public:
      Qmainwindows_();
+private:
      GL_GAME* game;
-     float ratio = 0.7;
-protected:
-    void resizeEvent(QResizeEvent *event)override ;
 };
 
 

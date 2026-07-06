@@ -23,7 +23,7 @@ World::~World()
     qDeleteAll(bodies);
 }
 
-void World::draw()
+void World::draw(bool advance_simulation)
 {
     if (bodies.isEmpty())
         return;
@@ -31,8 +31,13 @@ void World::draw()
     if (!gpu_initialized)
         init_gpu_physics();
 
-    for (int step = 0; step < substeps_per_frame; ++step)
-        update_gpu();
+    if (advance_simulation) {
+        substep_accumulator += substeps_per_frame * time_scale;
+        const int step_count = int(substep_accumulator);
+        substep_accumulator -= step_count;
+        for (int step = 0; step < step_count; ++step)
+            update_gpu();
+    }
     bodies.first()->draw_instances(bodies.size(), position_buffers[current_buffer]);
 }
 

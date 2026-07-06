@@ -19,6 +19,13 @@ cmake --build build
 - Use `A` and `D` to move sideways.
 - Use `Space` and `Shift` to move up and down.
 
+## Simulation controls
+
+- `Start/Pause` toggles simulation playback.
+- `Reset` restores the initial scene and pauses playback.
+- `Time scale` controls simulation speed from `0.1x` to `10x` without changing the integration step.
+- Select a particle count and press `Spawn` to create a new paused scene.
+
 When Qt is not available on the default CMake search path, specify its installation prefix:
 
 ```sh

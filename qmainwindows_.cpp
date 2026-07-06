@@ -1,13 +1,64 @@
 #include "qmainwindows_.h"
-#include <QResizeEvent>
+
+#include <QHBoxLayout>
+#include <QDoubleSpinBox>
+#include <QLabel>
+#include <QPushButton>
+#include <QSpinBox>
+#include <QVBoxLayout>
 
 Qmainwindows_::Qmainwindows_()
 {
-    resize(800, 600);
+    resize(1000, 650);
+
     game = new GL_GAME(this);
-    game->setGeometry(QRect(0, 0, 800 * ratio, 600));
-}
-void Qmainwindows_::resizeEvent(QResizeEvent *event)
-{
-    game->setGeometry(QRect(0, 0, event->size().width()*ratio, event->size().height()));
+    QWidget* control_panel = new QWidget(this);
+    QVBoxLayout* controls = new QVBoxLayout(control_panel);
+    QPushButton* start_pause_button = new QPushButton("Start", control_panel);
+    QPushButton* reset_button = new QPushButton("Reset", control_panel);
+    QLabel* particle_label = new QLabel("Particle count", control_panel);
+    QSpinBox* particle_count = new QSpinBox(control_panel);
+    QPushButton* spawn_button = new QPushButton("Spawn", control_panel);
+    QLabel* time_scale_label = new QLabel("Time scale", control_panel);
+    QDoubleSpinBox* time_scale = new QDoubleSpinBox(control_panel);
+
+    particle_count->setRange(2, 4096);
+    particle_count->setValue(512);
+    time_scale->setRange(0.1, 10.0);
+    time_scale->setSingleStep(0.1);
+    time_scale->setValue(1.0);
+    time_scale->setSuffix("x");
+
+    controls->addWidget(start_pause_button);
+    controls->addWidget(reset_button);
+    controls->addSpacing(16);
+    controls->addWidget(time_scale_label);
+    controls->addWidget(time_scale);
+    controls->addSpacing(16);
+    controls->addWidget(particle_label);
+    controls->addWidget(particle_count);
+    controls->addWidget(spawn_button);
+    controls->addStretch();
+
+    QHBoxLayout* layout = new QHBoxLayout(this);
+    layout->addWidget(game, 4);
+    layout->addWidget(control_panel, 1);
+
+    connect(start_pause_button, &QPushButton::clicked, this,
+            [this, start_pause_button]() {
+                const bool running = game->toggle_simulation();
+                start_pause_button->setText(running ? "Pause" : "Start");
+            });
+    connect(reset_button, &QPushButton::clicked, this,
+            [this, start_pause_button]() {
+                game->reset_simulation();
+                start_pause_button->setText("Start");
+            });
+    connect(time_scale, &QDoubleSpinBox::valueChanged,
+            game, &GL_GAME::set_time_scale);
+    connect(spawn_button, &QPushButton::clicked, this,
+            [this, particle_count, start_pause_button]() {
+                game->spawn_particles(particle_count->value());
+                start_pause_button->setText("Start");
+            });
 }
