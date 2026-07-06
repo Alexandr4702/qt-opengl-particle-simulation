@@ -1,23 +1,8 @@
 #include "body.h"
+#include <QOpenGLFunctions>
 
-Body::Body(QGLContext* ctx_):ctx(ctx_)
+Body::Body(QOpenGLContext* ctx_):ctx(ctx_)
 {
-    Assimp::Importer importer;
-    QString pathToFile;
-
-    const aiScene* scene = importer.ReadFile(pathToFile.toStdString(),
-            aiProcess_GenSmoothNormals |
-            aiProcess_CalcTangentSpace |
-            aiProcess_Triangulate |
-            aiProcess_JoinIdenticalVertices |
-            aiProcess_SortByPType
-            );
-
-    if (!scene)
-    {
-        qDebug() << "Error loading file: (assimp:) " << importer.GetErrorString();
-        return;
-    }
 }
 
 Body::Body(const Body &other)
@@ -127,25 +112,86 @@ void Body::setPosition(const QVector3D &value)
 
 void Body::init_geometry()
 {
+    static const QVector3D vertices[] = {
+        {-1, -1,  1}, { 1, -1,  1}, { 1,  1,  1},
+        {-1, -1,  1}, { 1,  1,  1}, {-1,  1,  1},
+        { 1, -1, -1}, {-1, -1, -1}, {-1,  1, -1},
+        { 1, -1, -1}, {-1,  1, -1}, { 1,  1, -1},
+        {-1, -1, -1}, {-1, -1,  1}, {-1,  1,  1},
+        {-1, -1, -1}, {-1,  1,  1}, {-1,  1, -1},
+        { 1, -1,  1}, { 1, -1, -1}, { 1,  1, -1},
+        { 1, -1,  1}, { 1,  1, -1}, { 1,  1,  1},
+        {-1,  1,  1}, { 1,  1,  1}, { 1,  1, -1},
+        {-1,  1,  1}, { 1,  1, -1}, {-1,  1, -1},
+        {-1, -1, -1}, { 1, -1, -1}, { 1, -1,  1},
+        {-1, -1, -1}, { 1, -1,  1}, {-1, -1,  1}
+    };
+
+    vertex_array.create();
+    vertex_array.bind();
+
+    vertex_buffer.create();
+    vertex_buffer.bind();
+    vertex_buffer.allocate(vertices, sizeof(vertices));
+
+    shader->enableAttributeArray("a_position");
+    shader->setAttributeBuffer("a_position", GL_FLOAT, 0, 3, sizeof(QVector3D));
+
+    vertex_buffer.release();
+    vertex_array.release();
 
 }
 
 void Body::draw()
 {
+    if (!shader || !projection || !camera || !vertex_array.isCreated())
+        return;
+
+    QMatrix4x4 model;
+    model.translate(position);
+    model.rotate(orenation);
+    model.scale(scale);
+
+    shader->bind();
+    shader->setUniformValue("mvp_matrix", *projection * *camera * model);
+    vertex_array.bind();
+    ctx->functions()->glDrawArrays(GL_TRIANGLES, 0, 36);
+    vertex_array.release();
 
 }
 
-void Body::set_projection(QMatrix4x4 *)
+void Body::draw_instances(int count, unsigned int position_buffer)
 {
+    if (!shader || !projection || !camera || !vertex_array.isCreated())
+        return;
 
+    QOpenGLFunctions_4_3_Core* functions =
+        QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_3_Core>(ctx);
+
+    shader->bind();
+    shader->setUniformValue("view_projection", *projection * *camera);
+    functions->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, position_buffer);
+    vertex_array.bind();
+    functions->glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+    vertex_array.release();
 }
 
-void Body::set_cam(QMatrix4x4 *)
+void Body::set_projection(QMatrix4x4 *projection_)
 {
-
+    projection = projection_;
 }
 
-void Body::set_context(QGLContext *ctx_)
+void Body::set_cam(QMatrix4x4 *camera_)
+{
+    camera = camera_;
+}
+
+void Body::set_shader(QOpenGLShaderProgram *shader_)
+{
+    shader = shader_;
+}
+
+void Body::set_context(QOpenGLContext *ctx_)
 {
     ctx=ctx_;
 }

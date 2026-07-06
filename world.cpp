@@ -1,31 +1,23 @@
 #include "world.h"
 
-World *for_calc;
-
-World::World(QGLContext* ctx)
+World::World(QOpenGLContext* context) : ctx(context)
 {
-    ctx->makeCurrent();
+    functions = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_3_Core>(context);
+    if (!functions)
+        qFatal("OpenGL 4.3 is required for compute shader physics");
+    functions->initializeOpenGLFunctions();
     init_pos_oren_shader();
     Projection.setToIdentity();
     Projection.perspective(90, 1.0, 1, 90);
-    for_calc = this;
-
-    for_calc->calculation=QThread::create([]()
-    {
-        while(1)
-        {
-//            fprintf(stderr,"updtae\r\n");
-
-            for_calc->update(0.000001);
-        }
-    }
-    );
-    for_calc->calculation->start();
 }
 
 World::~World()
 {
-    calculation->terminate();
+    if (position_buffers[0] != 0) {
+        functions->glDeleteBuffers(2, position_buffers);
+        functions->glDeleteBuffers(2, velocity_buffers);
+    }
+    qDeleteAll(bodies);
 }
 
 void World::update(float dt_)
@@ -100,16 +92,15 @@ void World::update()
 
 void World::draw()
 {
-//    update(dt);
-//    fprintf(stderr,"hello draw \r\n");
-
     cam.setToIdentity();
-//    cam.lookAt(bodies[0]->position-QVector3D(0,-20,-100), bodies[0]->position, QVector3D(0,1,0));
-    for(Body* body:bodies)
-    {
-        body->draw();
-    }
+    if (bodies.isEmpty())
+        return;
 
+    if (!gpu_initialized)
+        init_gpu_physics();
+
+    update_gpu(0.001f);
+    bodies.first()->draw_instances(bodies.size(), position_buffers[current_buffer]);
 }
 
 void World::draw(QMatrix4x4 &projection_matrix)
@@ -125,15 +116,23 @@ void World::draw(QMatrix4x4 &projection_matrix)
 void World::init_pos_oren_shader()
 {
 
-    if (!shader_position_orentation_programm.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/VS.vsh"))
+    if (!shader_position_orentation_programm.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/VS.vsh")) {
+        qCritical() << shader_position_orentation_programm.log();
         exit(-1);
-    if (!shader_position_orentation_programm.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/FS.fsh"))
+    }
+    if (!shader_position_orentation_programm.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/FS.fsh")) {
+        qCritical() << shader_position_orentation_programm.log();
         exit(-1);
+    }
 
-    if (!shader_position_orentation_programm.link())
+    if (!shader_position_orentation_programm.link()) {
+        qCritical() << shader_position_orentation_programm.log();
         exit(-1);
-    if (!shader_position_orentation_programm.bind())
+    }
+    if (!shader_position_orentation_programm.bind()) {
+        qCritical() << shader_position_orentation_programm.log();
         exit(-1);
+    }
 
 }
 
@@ -156,6 +155,63 @@ void World::add_body(Body * body)
 {
     body->set_projection(&Projection);
     body->set_cam(&cam);
-
+    body->set_shader(&shader_position_orentation_programm);
     bodies.push_back(body);
+}
+
+void World::init_gpu_physics()
+{
+    if (!physics_program.addShaderFromSourceFile(QOpenGLShader::Compute, ":/Physics.comp") ||
+        !physics_program.link()) {
+        qFatal("Failed to initialize physics compute shader: %s",
+               qPrintable(physics_program.log()));
+    }
+
+    QVector<QVector4D> positions;
+    QVector<QVector4D> velocities;
+    positions.reserve(bodies.size());
+    velocities.reserve(bodies.size());
+
+    for (Body* body : bodies) {
+        positions.append(QVector4D(body->position, body->scale.x()));
+        velocities.append(QVector4D(body->linear_velocity, float(body->mass)));
+    }
+
+    functions->glGenBuffers(2, position_buffers);
+    functions->glGenBuffers(2, velocity_buffers);
+
+    for (int index = 0; index < 2; ++index) {
+        functions->glBindBuffer(GL_SHADER_STORAGE_BUFFER, position_buffers[index]);
+        functions->glBufferData(GL_SHADER_STORAGE_BUFFER,
+                                positions.size() * sizeof(QVector4D),
+                                positions.constData(), GL_DYNAMIC_COPY);
+        functions->glBindBuffer(GL_SHADER_STORAGE_BUFFER, velocity_buffers[index]);
+        functions->glBufferData(GL_SHADER_STORAGE_BUFFER,
+                                velocities.size() * sizeof(QVector4D),
+                                velocities.constData(), GL_DYNAMIC_COPY);
+    }
+
+    bodies.first()->init_geometry();
+    gpu_initialized = true;
+}
+
+void World::update_gpu(float delta_time)
+{
+    const int next_buffer = 1 - current_buffer;
+
+    physics_program.bind();
+    physics_program.setUniformValue("body_count", unsigned(bodies.size()));
+    physics_program.setUniformValue("delta_time", delta_time);
+    functions->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0,
+                                position_buffers[current_buffer]);
+    functions->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1,
+                                velocity_buffers[current_buffer]);
+    functions->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2,
+                                position_buffers[next_buffer]);
+    functions->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3,
+                                velocity_buffers[next_buffer]);
+    functions->glDispatchCompute((unsigned(bodies.size()) + 127u) / 128u, 1, 1);
+    functions->glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    current_buffer = next_buffer;
 }

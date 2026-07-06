@@ -1,11 +1,11 @@
 #ifndef GL_GAME_H
 #define GL_GAME_H
 
-#include <QGLWidget>
-#include <QtOpenGL>
+#include <QOpenGLFunctions>
+#include <QOpenGLWidget>
 #include "world.h"
 
-class GL_GAME: public QGLWidget
+class GL_GAME: public QOpenGLWidget, protected QOpenGLFunctions
 {
 public:
     GL_GAME(QWidget *parent);
@@ -17,7 +17,7 @@ protected:
     void initShader();
 private:
     Body* Cube;
-    World* world;
+    World* world = nullptr;
 
 };
 

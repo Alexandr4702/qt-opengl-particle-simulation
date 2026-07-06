@@ -1,16 +1,10 @@
-#ifdef GL_ES
-// Set default precision to medium
-precision mediump int;
-precision mediump float;
-#endif
-varying vec4 color;
+#version 430 core
 
+in vec4 color;
+out vec4 fragment_color;
 
-//! [0]
 void main()
 {
-    // Set fragment color from texture
-    gl_FragColor = color;
+    fragment_color = color;
 }
-//! [0]
 

@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>VS.vsh</file>
         <file>FS.fsh</file>
+        <file>Physics.comp</file>
     </qresource>
 </RCC>

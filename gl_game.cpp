@@ -1,36 +1,40 @@
 #include "gl_game.h"
 #include <QOpenGLShaderProgram>
-#include <QTime>
+#include <QtMath>
 
-extern World *for_calc;
-
-GL_GAME::GL_GAME(QWidget *parent) : QGLWidget(parent)
+GL_GAME::GL_GAME(QWidget *parent) : QOpenGLWidget(parent)
 {
 
 }
 
 GL_GAME::~GL_GAME()
 {
+    if (!world)
+        return;
 
+    makeCurrent();
+    delete world;
+    doneCurrent();
 }
 
 void GL_GAME::initializeGL()
 {
-    qglClearColor(Qt::black);
+    initializeOpenGLFunctions();
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     world = new World(context());
 
-//    Body* ptr= new GL_CUBE(
-//                &world->shader_position_orentation_programm, context());
-
-//    ptr->setPosition(QVector3D(0,0,-10));
-////    ptr->forces.push_back(QVector3D(0,0,10));
-//    ptr->angular_velocity=QVector3D(0,5,0);
-//    ptr->linear_acclereation=QVector3D(0,0,0);
-//    ptr->setMass(2000000);
-//    ptr->setScale(QVector3D(10,1,10));
-//    ptr->J.setToIdentity();
-//    world->add_body();
+    constexpr int body_count = 512;
+    for (int index = 0; index < body_count; ++index) {
+        const float angle = float(index) * 0.37f;
+        const float radius = 1.0f + 6.0f * float(index) / float(body_count);
+        Body* body = new Body(context());
+        body->setPosition(QVector3D(radius * qCos(angle),
+                                    radius * qSin(angle), -20.0f));
+        body->setScale(QVector3D(0.08f, 0.08f, 0.08f));
+        body->setMass(0.2);
+        world->add_body(body);
+    }
 }
 
 void GL_GAME::paintGL()

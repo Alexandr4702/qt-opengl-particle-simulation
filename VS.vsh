@@ -1,16 +1,19 @@
-#ifdef GL_ES
-// Set default precision to medium
-precision mediump int;
-precision mediump float;
-#endif
+#version 430 core
 
-uniform mat4 mvp_matrix;
+layout(std430, binding = 0) readonly buffer PositionBuffer
+{
+    vec4 positions[];
+};
 
-attribute vec4 a_position;
+uniform mat4 view_projection;
 
-varying vec4 color;
+in vec4 a_position;
+
+out vec4 color;
 void main()
 {
-    gl_Position = mvp_matrix * a_position;
+    vec4 body = positions[gl_InstanceID];
+    vec3 world_position = body.xyz + a_position.xyz * body.w;
+    gl_Position = view_projection * vec4(world_position, 1.0);
     color=vec4(clamp(a_position[0],0.1,1.0),clamp(a_position[1],0.1,1.0),clamp(a_position[2],0.1,1.0),1);
 }

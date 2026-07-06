@@ -6,18 +6,16 @@
 
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
-#include <QGLContext>
-
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/Importer.hpp>
-
-#include <eigen3/Eigen/Core>
+#include <QOpenGLContext>
+#include <QOpenGLFunctions_4_3_Core>
+#include <QOpenGLVersionFunctionsFactory>
+#include <QOpenGLVertexArrayObject>
 
 class Body
 {
 public:
-    Body(QGLContext* ctx_);
+    Body(QOpenGLContext* ctx_);
+    virtual ~Body() = default;
     Body(const Body& other);
     Body(Body&& other)noexcept;
     Body& operator = (const Body & other);
@@ -72,10 +70,18 @@ public:
 public:
     virtual void init_geometry();
     virtual void draw();
+    void draw_instances(int count, unsigned int position_buffer);
     virtual void set_projection(QMatrix4x4*);
     virtual void set_cam(QMatrix4x4*);
-    void set_context(QGLContext* ctx_);
-    QGLContext* ctx = nullptr;
+    void set_shader(QOpenGLShaderProgram* shader_);
+    void set_context(QOpenGLContext* ctx_);
+    QOpenGLContext* ctx = nullptr;
+private:
+    QOpenGLBuffer vertex_buffer;
+    QOpenGLVertexArrayObject vertex_array;
+    QOpenGLShaderProgram* shader = nullptr;
+    QMatrix4x4* projection = nullptr;
+    QMatrix4x4* camera = nullptr;
 };
 
 #endif // BODY_H
