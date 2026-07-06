@@ -24,6 +24,8 @@ layout(std430, binding = 3) writeonly buffer OutputVelocities
 
 uniform uint body_count;
 uniform float delta_time;
+uniform float gravitational_constant;
+uniform float softening;
 
 void main()
 {
@@ -40,10 +42,11 @@ void main()
             continue;
 
         vec3 offset = input_positions[other].xyz - position;
-        float distance_squared = dot(offset, offset) + 0.01;
+        float distance_squared = dot(offset, offset) + softening;
         float inverse_distance = inversesqrt(distance_squared);
         float inverse_distance_cubed = inverse_distance * inverse_distance * inverse_distance;
-        acceleration += input_velocities[other].w * offset * inverse_distance_cubed;
+        acceleration += gravitational_constant * input_velocities[other].w
+                      * offset * inverse_distance_cubed;
     }
 
     velocity += acceleration * delta_time;
