@@ -14,7 +14,10 @@ public:
     enum class PotentialType {
         Gravity = 0,
         Coulomb = 1,
-        GravityAndCoulomb = 2
+        GravityAndCoulomb = 2,
+        Harmonic = 3,
+        LennardJones = 4,
+        Yukawa = 5
     };
 
     explicit World(QOpenGLContext* context);
@@ -26,6 +29,10 @@ public:
 
     float gravitational_constant = 1.0f;
     float coulomb_constant = 10.0f;
+    float harmonic_constant = 0.2f;
+    float lennard_jones_epsilon = 0.02f;
+    float lennard_jones_sigma = 0.35f;
+    float yukawa_range = 2.5f;
     float softening = 0.01f;
     float time_step = 0.001f;
     float time_scale = 1.0f;

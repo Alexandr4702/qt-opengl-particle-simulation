@@ -117,6 +117,14 @@ void World::update_gpu()
                            gravitational_constant);
     functions->glUniform1f(physics_program.uniformLocation("coulomb_constant"),
                            coulomb_constant);
+    functions->glUniform1f(physics_program.uniformLocation("harmonic_constant"),
+                           harmonic_constant);
+    functions->glUniform1f(physics_program.uniformLocation("lennard_jones_epsilon"),
+                           lennard_jones_epsilon);
+    functions->glUniform1f(physics_program.uniformLocation("lennard_jones_sigma"),
+                           lennard_jones_sigma);
+    functions->glUniform1f(physics_program.uniformLocation("yukawa_range"),
+                           yukawa_range);
     functions->glUniform1f(physics_program.uniformLocation("softening"), softening);
     functions->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0,
                                 position_buffers[current_buffer]);

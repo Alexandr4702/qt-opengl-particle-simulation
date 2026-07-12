@@ -32,6 +32,10 @@ uniform uint potential_type;
 uniform float delta_time;
 uniform float gravitational_constant;
 uniform float coulomb_constant;
+uniform float harmonic_constant;
+uniform float lennard_jones_epsilon;
+uniform float lennard_jones_sigma;
+uniform float yukawa_range;
 uniform float softening;
 
 void main()
@@ -53,6 +57,8 @@ void main()
         vec3 offset = input_positions[other].xyz - position;
         float distance_squared = dot(offset, offset) + softening;
         float inverse_distance = inversesqrt(distance_squared);
+        float distance = 1.0 / inverse_distance;
+        float inverse_distance_squared = inverse_distance * inverse_distance;
         float inverse_distance_cubed = inverse_distance * inverse_distance * inverse_distance;
         if (potential_type == 0u || potential_type == 2u) {
             acceleration += gravitational_constant * properties[other].x
@@ -62,6 +68,35 @@ void main()
         if (potential_type == 1u || potential_type == 2u) {
             acceleration -= coulomb_constant * charge * properties[other].y
                           * offset * inverse_distance_cubed / mass;
+        }
+
+        if (potential_type == 3u) {
+            acceleration += harmonic_constant * offset / mass;
+        }
+
+        if (potential_type == 4u) {
+            float sigma_over_distance = lennard_jones_sigma * inverse_distance;
+            float sigma_over_distance_2 =
+                sigma_over_distance * sigma_over_distance;
+            float sigma_over_distance_6 =
+                sigma_over_distance_2 * sigma_over_distance_2
+                * sigma_over_distance_2;
+            float sigma_over_distance_12 =
+                sigma_over_distance_6 * sigma_over_distance_6;
+            acceleration -= 24.0 * lennard_jones_epsilon
+                          * (2.0 * sigma_over_distance_12
+                             - sigma_over_distance_6)
+                          * offset * inverse_distance_squared / mass;
+        }
+
+        if (potential_type == 5u) {
+            float inverse_range = 1.0 / yukawa_range;
+            float attenuation = exp(-distance * inverse_range);
+            acceleration += gravitational_constant * properties[other].x
+                          * attenuation
+                          * (inverse_distance_cubed
+                             + inverse_range * inverse_distance_squared)
+                          * offset;
         }
     }
 

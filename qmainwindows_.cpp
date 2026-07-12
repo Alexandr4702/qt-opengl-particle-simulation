@@ -31,6 +31,9 @@ Qmainwindows_::Qmainwindows_()
     potential->addItem("Gravity");
     potential->addItem("Coulomb");
     potential->addItem("Gravity + Coulomb");
+    potential->addItem("Harmonic attraction");
+    potential->addItem("Lennard-Jones");
+    potential->addItem("Yukawa");
     time_scale->setRange(0.1, 10.0);
     time_scale->setSingleStep(0.1);
     time_scale->setValue(1.0);

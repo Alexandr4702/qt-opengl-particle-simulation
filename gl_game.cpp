@@ -63,13 +63,18 @@ void GL_GAME::rebuild_scene()
             potential_type == World::PotentialType::GravityAndCoulomb;
         const bool charged_potential =
             potential_type == World::PotentialType::Coulomb || combined_potential;
+        const bool orbiting_potential =
+            combined_potential || potential_type == World::PotentialType::Harmonic
+            || potential_type == World::PotentialType::Yukawa;
         for (int index = 0; index < particle_count; ++index) {
             const float angle = float(index) * 2.399963f;
-            const float radius = 1.0f + 6.0f * float(index) / float(particle_count);
+            const float radius = potential_type == World::PotentialType::LennardJones
+                ? 0.7f + 4.0f * float(index) / float(particle_count)
+                : 1.0f + 6.0f * float(index) / float(particle_count);
             Body* body = new Body(context());
             body->setPosition(QVector3D(radius * qCos(angle),
                                         radius * qSin(angle), -20.0f));
-            if (combined_potential)
+            if (orbiting_potential)
                 body->setLinear_velocity(QVector3D(-0.35f * qSin(angle),
                                                     0.35f * qCos(angle), 0.0f));
             body->setScale(QVector3D(0.12f, 0.12f, 0.12f));
@@ -132,6 +137,15 @@ void GL_GAME::set_potential(int potential_index)
         break;
     case 2:
         potential_type = World::PotentialType::GravityAndCoulomb;
+        break;
+    case 3:
+        potential_type = World::PotentialType::Harmonic;
+        break;
+    case 4:
+        potential_type = World::PotentialType::LennardJones;
+        break;
+    case 5:
+        potential_type = World::PotentialType::Yukawa;
         break;
     default:
         potential_type = World::PotentialType::Gravity;
