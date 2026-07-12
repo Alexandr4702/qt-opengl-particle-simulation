@@ -21,8 +21,10 @@ public:
     QVector3D scale = QVector3D(1,1,1);
     QVector3D linear_velocity = QVector3D(0,0,0);
     double mass = 1;
+    double charge = 0;
 
     void setMass(double value);
+    void setCharge(double value);
     void setLinear_velocity(const QVector3D &value);
     void setPosition(const QVector3D &value);
     void setScale(const QVector3D &value);

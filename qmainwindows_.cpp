@@ -2,6 +2,7 @@
 
 #include <QHBoxLayout>
 #include <QDoubleSpinBox>
+#include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QSpinBox>
@@ -19,11 +20,17 @@ Qmainwindows_::Qmainwindows_()
     QLabel* particle_label = new QLabel("Particle count", control_panel);
     QSpinBox* particle_count = new QSpinBox(control_panel);
     QPushButton* spawn_button = new QPushButton("Spawn", control_panel);
+    QLabel* potential_label = new QLabel("Potential", control_panel);
+    QComboBox* potential = new QComboBox(control_panel);
     QLabel* time_scale_label = new QLabel("Time scale", control_panel);
     QDoubleSpinBox* time_scale = new QDoubleSpinBox(control_panel);
 
     particle_count->setRange(2, 4096);
+    particle_count->setSingleStep(2);
     particle_count->setValue(512);
+    potential->addItem("Gravity");
+    potential->addItem("Coulomb");
+    potential->addItem("Gravity + Coulomb");
     time_scale->setRange(0.1, 10.0);
     time_scale->setSingleStep(0.1);
     time_scale->setValue(1.0);
@@ -34,6 +41,9 @@ Qmainwindows_::Qmainwindows_()
     controls->addSpacing(16);
     controls->addWidget(time_scale_label);
     controls->addWidget(time_scale);
+    controls->addSpacing(16);
+    controls->addWidget(potential_label);
+    controls->addWidget(potential);
     controls->addSpacing(16);
     controls->addWidget(particle_label);
     controls->addWidget(particle_count);
@@ -56,6 +66,11 @@ Qmainwindows_::Qmainwindows_()
             });
     connect(time_scale, &QDoubleSpinBox::valueChanged,
             game, &GL_GAME::set_time_scale);
+    connect(potential, &QComboBox::currentIndexChanged, this,
+            [this, start_pause_button](int index) {
+                game->set_potential(index);
+                start_pause_button->setText("Start");
+            });
     connect(spawn_button, &QPushButton::clicked, this,
             [this, particle_count, start_pause_button]() {
                 game->spawn_particles(particle_count->value());

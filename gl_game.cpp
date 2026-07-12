@@ -34,28 +34,50 @@ void GL_GAME::rebuild_scene()
     delete world;
     world = new World(context());
     world->time_scale = simulation_time_scale;
+    world->potential_type = potential_type;
 
-    constexpr float central_mass = 100.0f;
+    if (potential_type == World::PotentialType::Gravity) {
+        constexpr float central_mass = 100.0f;
+        Body* center = new Body(context());
+        center->setPosition(QVector3D(0.0f, 0.0f, -20.0f));
+        center->setScale(QVector3D(0.35f, 0.35f, 0.35f));
+        center->setMass(central_mass);
+        world->add_body(center);
 
-    Body* center = new Body(context());
-    center->setPosition(QVector3D(0.0f, 0.0f, -20.0f));
-    center->setScale(QVector3D(0.35f, 0.35f, 0.35f));
-    center->setMass(central_mass);
-    world->add_body(center);
-
-    for (int index = 1; index < particle_count; ++index) {
-        const float angle = float(index) * 0.37f;
-        const float radius = 1.0f + 6.0f * float(index) / float(particle_count);
-        const float orbital_speed =
-            qSqrt(world->gravitational_constant * central_mass / radius);
-        Body* body = new Body(context());
-        body->setPosition(QVector3D(radius * qCos(angle),
-                                    radius * qSin(angle), -20.0f));
-        body->setLinear_velocity(QVector3D(-orbital_speed * qSin(angle),
-                                            orbital_speed * qCos(angle), 0.0f));
-        body->setScale(QVector3D(0.1f, 0.1f, 0.1f));
-        body->setMass(0.02);
-        world->add_body(body);
+        for (int index = 1; index < particle_count; ++index) {
+            const float angle = float(index) * 0.37f;
+            const float radius = 1.0f + 6.0f * float(index) / float(particle_count);
+            const float orbital_speed =
+                qSqrt(world->gravitational_constant * central_mass / radius);
+            Body* body = new Body(context());
+            body->setPosition(QVector3D(radius * qCos(angle),
+                                        radius * qSin(angle), -20.0f));
+            body->setLinear_velocity(QVector3D(-orbital_speed * qSin(angle),
+                                                orbital_speed * qCos(angle), 0.0f));
+            body->setScale(QVector3D(0.1f, 0.1f, 0.1f));
+            body->setMass(0.02);
+            world->add_body(body);
+        }
+    } else {
+        const bool combined_potential =
+            potential_type == World::PotentialType::GravityAndCoulomb;
+        const bool charged_potential =
+            potential_type == World::PotentialType::Coulomb || combined_potential;
+        for (int index = 0; index < particle_count; ++index) {
+            const float angle = float(index) * 2.399963f;
+            const float radius = 1.0f + 6.0f * float(index) / float(particle_count);
+            Body* body = new Body(context());
+            body->setPosition(QVector3D(radius * qCos(angle),
+                                        radius * qSin(angle), -20.0f));
+            if (combined_potential)
+                body->setLinear_velocity(QVector3D(-0.35f * qSin(angle),
+                                                    0.35f * qCos(angle), 0.0f));
+            body->setScale(QVector3D(0.12f, 0.12f, 0.12f));
+            body->setMass(1.0);
+            if (charged_potential)
+                body->setCharge(index % 2 == 0 ? 1.0 : -1.0);
+            world->add_body(body);
+        }
     }
     rebuild_requested = false;
 }
@@ -95,6 +117,26 @@ void GL_GAME::set_time_scale(double scale)
 void GL_GAME::spawn_particles(int count)
 {
     particle_count = qBound(2, count, 4096);
+    if (particle_count % 2 != 0)
+        ++particle_count;
+    simulation_running = false;
+    rebuild_requested = true;
+    update();
+}
+
+void GL_GAME::set_potential(int potential_index)
+{
+    switch (potential_index) {
+    case 1:
+        potential_type = World::PotentialType::Coulomb;
+        break;
+    case 2:
+        potential_type = World::PotentialType::GravityAndCoulomb;
+        break;
+    default:
+        potential_type = World::PotentialType::Gravity;
+        break;
+    }
     simulation_running = false;
     rebuild_requested = true;
     update();

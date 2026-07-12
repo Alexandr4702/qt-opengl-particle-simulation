@@ -26,6 +26,11 @@ void Body::setMass(double value)
     mass = value;
 }
 
+void Body::setCharge(double value)
+{
+    charge = value;
+}
+
 void Body::init_geometry()
 {
     constexpr int stack_count = 12;
@@ -39,7 +44,6 @@ void Body::init_geometry()
                          qSin(latitude),
                          latitude_cosine * qSin(longitude));
     };
-
     for (int stack = 0; stack < stack_count; ++stack) {
         const float latitude_0 = -float(M_PI_2) + float(M_PI) * stack / stack_count;
         const float latitude_1 = -float(M_PI_2) + float(M_PI) * (stack + 1) / stack_count;

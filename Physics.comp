@@ -22,9 +22,16 @@ layout(std430, binding = 3) writeonly buffer OutputVelocities
     vec4 output_velocities[];
 };
 
+layout(std430, binding = 4) readonly buffer ParticleProperties
+{
+    vec4 properties[];
+};
+
 uniform uint body_count;
+uniform uint potential_type;
 uniform float delta_time;
 uniform float gravitational_constant;
+uniform float coulomb_constant;
 uniform float softening;
 
 void main()
@@ -36,6 +43,8 @@ void main()
     vec3 position = input_positions[index].xyz;
     vec3 velocity = input_velocities[index].xyz;
     vec3 acceleration = vec3(0.0);
+    float mass = properties[index].x;
+    float charge = properties[index].y;
 
     for (uint other = 0; other < body_count; ++other) {
         if (other == index)
@@ -45,8 +54,15 @@ void main()
         float distance_squared = dot(offset, offset) + softening;
         float inverse_distance = inversesqrt(distance_squared);
         float inverse_distance_cubed = inverse_distance * inverse_distance * inverse_distance;
-        acceleration += gravitational_constant * input_velocities[other].w
-                      * offset * inverse_distance_cubed;
+        if (potential_type == 0u || potential_type == 2u) {
+            acceleration += gravitational_constant * properties[other].x
+                          * offset * inverse_distance_cubed;
+        }
+
+        if (potential_type == 1u || potential_type == 2u) {
+            acceleration -= coulomb_constant * charge * properties[other].y
+                          * offset * inverse_distance_cubed / mass;
+        }
     }
 
     velocity += acceleration * delta_time;

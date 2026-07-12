@@ -17,6 +17,7 @@ public:
     void reset_simulation();
     void spawn_particles(int count);
     void set_time_scale(double scale);
+    void set_potential(int potential_index);
 protected:
     void initializeGL();
     void resizeGL(int width, int height);
@@ -36,6 +37,7 @@ private:
     QElapsedTimer frame_timer;
     int particle_count = 512;
     float simulation_time_scale = 1.0f;
+    World::PotentialType potential_type = World::PotentialType::Gravity;
     bool simulation_running = false;
     bool rebuild_requested = false;
 

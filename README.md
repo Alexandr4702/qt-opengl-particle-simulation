@@ -25,6 +25,8 @@ cmake --build build
 - `Reset` restores the initial scene and pauses playback.
 - `Time scale` controls simulation speed from `0.1x` to `10x` without changing the integration step.
 - Select a particle count and press `Spawn` to create a new paused scene.
+- Select `Gravity`, `Coulomb`, or `Gravity + Coulomb` to switch the interaction potential and reset the scene.
+- Coulomb-based scenes contain equal numbers of red positive and blue negative charges.
 
 When Qt is not available on the default CMake search path, specify its installation prefix:
 
@@ -37,14 +39,24 @@ cmake --build build
 
 Each body has a mass $m$, position $\mathbf r$, and linear velocity $\mathbf v$. Positions and velocities are stored in ping-pong shader storage buffers and updated by an OpenGL compute shader. The gravitational constant, softening term, integration step, and compute substeps per rendered frame are configured by the public `World` fields `gravitational_constant`, `softening`, `time_step`, and `substeps_per_frame`.
 
-The gravitational force exerted by body $j$ on body $i$ is calculated with gravitational constant $G=1$:
+The gravitational acceleration exerted by body $j$ on body $i$ is calculated with gravitational constant $G=1$:
 
 $$
 \mathbf a_i = \sum_{j\ne i}
-\frac{m_j(\mathbf r_j-\mathbf r_i)}
+G\frac{m_j(\mathbf r_j-\mathbf r_i)}
 {(\lVert \mathbf r_j-\mathbf r_i\rVert^2+\varepsilon)^{3/2}},
 \qquad \varepsilon=\texttt{World::softening}.
 $$
+
+The Coulomb mode assigns each body a charge $q_i\in\{-1,1\}$ and adds electric acceleration with constant $K=10$:
+
+$$
+\mathbf a_i = -\sum_{j\ne i}
+K\frac{q_iq_j(\mathbf r_j-\mathbf r_i)}
+{m_i(\lVert \mathbf r_j-\mathbf r_i\rVert^2+\varepsilon)^{3/2}}.
+$$
+
+`Gravity + Coulomb` sums both acceleration terms before integration.
 
 The softening term $\varepsilon$ prevents singular acceleration at very small distances. Velocity and position use semi-implicit Euler integration:
 

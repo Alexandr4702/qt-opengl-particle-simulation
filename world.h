@@ -11,6 +11,12 @@
 class World
 {
 public:
+    enum class PotentialType {
+        Gravity = 0,
+        Coulomb = 1,
+        GravityAndCoulomb = 2
+    };
+
     explicit World(QOpenGLContext* context);
     ~World();
 
@@ -19,10 +25,12 @@ public:
     void set_camera(const QMatrix4x4& value);
 
     float gravitational_constant = 1.0f;
+    float coulomb_constant = 10.0f;
     float softening = 0.01f;
     float time_step = 0.001f;
     float time_scale = 1.0f;
     int substeps_per_frame = 8;
+    PotentialType potential_type = PotentialType::Gravity;
     QMatrix4x4 Projection;
 
 private:
@@ -38,6 +46,7 @@ private:
     QOpenGLShaderProgram physics_program;
     unsigned int position_buffers[2] = {0, 0};
     unsigned int velocity_buffers[2] = {0, 0};
+    unsigned int property_buffer = 0;
     int current_buffer = 0;
     bool gpu_initialized = false;
     float substep_accumulator = 0.0f;
