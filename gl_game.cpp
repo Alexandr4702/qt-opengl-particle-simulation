@@ -5,6 +5,33 @@
 #include <QWheelEvent>
 #include <QtMath>
 
+namespace {
+constexpr float scene_depth = -20.0f;
+constexpr float golden_angle = 2.399963f;
+
+QVector3D spherical_offset(int index, int count, float min_radius, float max_radius)
+{
+    const float t = (float(index) + 0.5f) / float(qMax(1, count));
+    const float z = 1.0f - 2.0f * t;
+    const float xy = qSqrt(qMax(0.0f, 1.0f - z * z));
+    const float angle = float(index) * golden_angle;
+    const float radius = min_radius + (max_radius - min_radius) * qPow(t, 1.0f / 3.0f);
+
+    return QVector3D(radius * xy * qCos(angle),
+                     radius * xy * qSin(angle),
+                     radius * z);
+}
+
+QVector3D tangential_velocity(const QVector3D& offset, float speed)
+{
+    QVector3D tangent = QVector3D::crossProduct(QVector3D(0.0f, 0.0f, 1.0f), offset);
+    if (tangent.lengthSquared() < 0.0001f)
+        tangent = QVector3D::crossProduct(QVector3D(0.0f, 1.0f, 0.0f), offset);
+
+    return tangent.normalized() * speed;
+}
+}
+
 GL_GAME::GL_GAME(QWidget *parent) : QOpenGLWidget(parent)
 {
     setFocusPolicy(Qt::StrongFocus);
@@ -39,21 +66,20 @@ void GL_GAME::rebuild_scene()
     if (potential_type == World::PotentialType::Gravity) {
         constexpr float central_mass = 100.0f;
         Body* center = new Body(context());
-        center->setPosition(QVector3D(0.0f, 0.0f, -20.0f));
+        center->setPosition(QVector3D(0.0f, 0.0f, scene_depth));
         center->setScale(QVector3D(0.35f, 0.35f, 0.35f));
         center->setMass(central_mass);
         world->add_body(center);
 
         for (int index = 1; index < particle_count; ++index) {
-            const float angle = float(index) * 0.37f;
-            const float radius = 1.0f + 6.0f * float(index) / float(particle_count);
+            const QVector3D offset =
+                spherical_offset(index - 1, particle_count - 1, 1.0f, 7.0f);
+            const float radius = offset.length();
             const float orbital_speed =
                 qSqrt(world->gravitational_constant * central_mass / radius);
             Body* body = new Body(context());
-            body->setPosition(QVector3D(radius * qCos(angle),
-                                        radius * qSin(angle), -20.0f));
-            body->setLinear_velocity(QVector3D(-orbital_speed * qSin(angle),
-                                                orbital_speed * qCos(angle), 0.0f));
+            body->setPosition(QVector3D(0.0f, 0.0f, scene_depth) + offset);
+            body->setLinear_velocity(tangential_velocity(offset, orbital_speed));
             body->setScale(QVector3D(0.1f, 0.1f, 0.1f));
             body->setMass(0.02);
             world->add_body(body);
@@ -67,16 +93,14 @@ void GL_GAME::rebuild_scene()
             combined_potential || potential_type == World::PotentialType::Harmonic
             || potential_type == World::PotentialType::Yukawa;
         for (int index = 0; index < particle_count; ++index) {
-            const float angle = float(index) * 2.399963f;
-            const float radius = potential_type == World::PotentialType::LennardJones
-                ? 0.7f + 4.0f * float(index) / float(particle_count)
-                : 1.0f + 6.0f * float(index) / float(particle_count);
+            const QVector3D offset =
+                potential_type == World::PotentialType::LennardJones
+                ? spherical_offset(index, particle_count, 0.7f, 4.7f)
+                : spherical_offset(index, particle_count, 1.0f, 7.0f);
             Body* body = new Body(context());
-            body->setPosition(QVector3D(radius * qCos(angle),
-                                        radius * qSin(angle), -20.0f));
+            body->setPosition(QVector3D(0.0f, 0.0f, scene_depth) + offset);
             if (orbiting_potential)
-                body->setLinear_velocity(QVector3D(-0.35f * qSin(angle),
-                                                    0.35f * qCos(angle), 0.0f));
+                body->setLinear_velocity(tangential_velocity(offset, 0.35f));
             body->setScale(QVector3D(0.12f, 0.12f, 0.12f));
             body->setMass(1.0);
             if (charged_potential)

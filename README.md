@@ -28,6 +28,8 @@ cmake --build build
 - Select `Gravity`, `Coulomb`, `Gravity + Coulomb`, `Harmonic attraction`,
   `Lennard-Jones`, or `Yukawa` to switch the interaction potential and reset
   the scene.
+- Initial particles are distributed inside a 3D sphere, so camera movement
+  reveals depth immediately.
 - Coulomb-based scenes contain equal numbers of red positive and blue negative charges.
 
 When Qt is not available on the default CMake search path, specify its installation prefix:
